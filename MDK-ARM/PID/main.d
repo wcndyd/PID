@@ -31,5 +31,6 @@ pid\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 pid\main.o: ../Inc/tim.h
 pid\main.o: ../Inc/usart.h
 pid\main.o: ../Inc/gpio.h
+pid\main.o: ..\MYcore\pid.h
 pid\main.o: D:\keil\ARM\ARMCC\Bin\..\include\stdio.h
 pid\main.o: D:\keil\ARM\ARMCC\Bin\..\include\math.h

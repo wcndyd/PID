@@ -23,6 +23,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "pid.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -52,9 +53,12 @@
 int MotorSpeed;
 int MotorOutput;
  int  cout;
+ float pwmnbr;
  int dir;
  uint8_t  a[]={0xff,0x10,0x5f,0x3f,0xb1,0x02,0x95,0x3e,0x57,0xa6,0x16,0xbe,0x7b,0x4d,0x7f,0xbf,0x00,0x00,0x80,0x7f};
  int number=0;
+ PID_TypeDef M1,M2,M3,M4;
+	 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,7 +76,7 @@ int fputc(int ch,FILE *p)
 	USART1->DR=ch;
 	return ch;
 }
-
+void speed_one(int pwm,int dir);
 /* USER CODE END 0 */
 
 /**
@@ -115,14 +119,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	PID_Init(&M1, DELTA_PID ,15000,5000,2,20,20);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	
-		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,15000);
-		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,12000);
+
 //		
 //		dir=__HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3);
   }
@@ -176,14 +179,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			//__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,MotorOutput);
 			//=MotorOutput*100/7200;
 			i++;
-			if(i>100)
+			if(i==10)
 			{
 				MotorSpeed=__HAL_TIM_GET_COUNTER(&htim3);
 				__HAL_TIM_SET_COUNTER(&htim3, 0);
 				HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_5);
-//				printf("Encoder=%d  motor=%d \r\n",MotorSpeed,MotorOutput);
+   			pwmnbr=PID_Calculate(&M1,200,MotorSpeed);
+				speed_one(pwmnbr,1);
 				i=0;
 			}
+
+			
+//			if(i>100)
+//			{
+//				MotorSpeed=__HAL_TIM_GET_COUNTER(&htim3);
+//				__HAL_TIM_SET_COUNTER(&htim3, 0);
+//				HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_5);
+//  			printf("Encoder=%d  motor=%d \r\n",MotorSpeed,MotorOutput);
+//				i=0;
+//			}
 			//HAL_UART_Transmit(&huart1,a,sizeof(a),1000);
 			//HAL_UART_Transmit(&huart1,&cout,sizeof(cout),1000);
 //			cout=__HAL_TIM_GET_COUNTER(&htim3);
@@ -192,6 +206,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //			number=0;
 			// usart1_send(a);
     }
+}
+void speed_one(int pwm,int dir)
+{
+  if(dir==0)
+	{
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3,GPIO_PIN_SET);
+	}
+	else if(dir>0)
+	{
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3,GPIO_PIN_RESET);
+	}
+	else 
+	{
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3,GPIO_PIN_SET);		
+	}
+	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,pwm);
 }
 /* USER CODE END 4 */
 
